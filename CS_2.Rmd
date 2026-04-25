@@ -1,9 +1,33 @@
 ---
-title: "Case Study 2"
-author: "Hauer Lena"
-date: "2026-04-25"
-output: pdf_document
+title: "Case Study 1"
+author: "Alexandra Faber, Lena Hauer, Fiona Trumshi"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+subtitle: AKSTA Statistical Computing
+header-includes: \usepackage{booktabs}
 ---
+## AI Usage
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{l|rrrrrrrrr}
+\toprule
+ \textbf{AI usage} & \textbf {Question a} & \textbf{Question b} & \textbf{Question c} &\textbf{Question d} &\textbf{Question e} & \textbf{Question f}\textbf{Question g}\textbf{Question i}\textbf{Question j}  \\
+\midrule
+\textit{Feedback on existing solution}  & no & no & no &  &    &  &  &  &   \\ 
+\textit{Improving existing code}   & little & no & no &  &    &  &  &  &    \\ 
+\textit{Generating new code}  & no & no & no &  &    &   &  &  &   \\ 
+\textit{Layout and formatting}  & no & no & no &  &     &   &  &  &    \\ 
+\textit{Text correction}   & no & no & no &  &  &  &  &  &        \\ 
+\textit{Debugging} & no & no & no &  &  &  &  &  &   \\
+\textit{AI Model} & GPT-5.3  &  &  &    &  & &  &  &   \\ 
+\bottomrule
+\end{tabular}
+\end{table}
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
