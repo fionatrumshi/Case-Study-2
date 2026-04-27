@@ -18,13 +18,13 @@ header-includes: \usepackage{booktabs}
 \toprule
  \textbf{AI usage} & \textbf {Question a} & \textbf{Question b} & \textbf{Question c} &\textbf{Question d} &\textbf{Question e} & \textbf{Question f}\textbf{Question g}\textbf{Question i}\textbf{Question j}  \\
 \midrule
-\textit{Feedback on existing solution}  & no & no & no &  &    &  &  &  &   \\ 
-\textit{Improving existing code}   & little & no & no &  &    &  &  &  &    \\ 
-\textit{Generating new code}  & no & no & no &  &    &   &  &  &   \\ 
-\textit{Layout and formatting}  & no & no & no &  &     &   &  &  &    \\ 
-\textit{Text correction}   & no & no & no &  &  &  &  &  &        \\ 
-\textit{Debugging} & no & no & no &  &  &  &  &  &   \\
-\textit{AI Model} & GPT-5.3  &  &  &    &  & &  &  &   \\ 
+\textit{Feedback on existing solution}  & no & no & no & no &  no  &  no&  &  &   \\ 
+\textit{Improving existing code}   & little & no & no & little & little  & little &  &  &   \\
+\textit{Generating new code}  & no & no & no & no &  no  & no  &  &  &   \\ 
+\textit{Layout and formatting}  & no & no & no & no &  no   &   &  &  &    \\ 
+\textit{Text correction}   & no & no & no & no & no & no &  &  &        \\ 
+\textit{Debugging} & no & no & no & no & no & no &  &  &   \\
+\textit{AI Model} & GPT-5.3  &  &  &  Gemini 3.1  & Gemini 3.1 & Gemini 3.1 &  &  &   \\ 
 \bottomrule
 \end{tabular}
 \end{table}
@@ -121,9 +121,207 @@ merge_all
 
 
 
+## d. Adding Geographical Information
+Introduce continent and subcontinent (or region) data for each country.
+Find and download an appropriate online resource.
+Merge this information into the dataset, naming the final dataset df_vars. Make sure you are not losing any of the countries in your original data set when merging.
+
+```{r }
+library(dplyr)
+library(readr)
+
+# Loading the geograhical resource (Downloaded from: https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv)
+# reading only the relevant information
+geo_data <- read_csv("countries-with-regional-codes.csv", show_col_types = FALSE) %>%
+  select(`alpha-3`, region, `sub-region`) %>%
+  rename(code = `alpha-3`, continent = region, subcontinent = `sub-region`)
+
+# Merge into the existing dataset
+# We use left_join to ensure no countries from the original set are lost
+df_vars <- merge_all %>%
+  left_join(geo_data, by = c("Code" = "code"))
+
+# Verify dimensions to ensure the number of countries stayed the same
+dim(df_vars)
+df_vars
+```
+The dimensions are the same as before,  so no country is lost.
+
+##e. Data Tidiness and Summary Statistics
+
+Evaluate the tidiness of df_vars (observational units, variables, fixed vs. measured variables). Make adjustments to tidy the data, if necessary.
+
+The dataset df_vars follows the principles of tidy data:
+
+Each variable forms a column: Expenditure, Unemployment, and Migration are separate columns.
+
+Each observation forms a row: Each row represents a unique country/entity.
+
+Each type of observational unit forms a table: The unit here is the country.
+Fixed variables include the Country Name and Continent, while the measured variables are the economic indicators.
+
+Create a frequency table for the income status variable and briefly interpret the results
+```{r }
+# Ensure income_status is a factor with proper levels for ordering
+df_vars$income_status <- factor(df_vars$Category, 
+                                levels = c("Low income", "Lower middle income", 
+                                           "Upper middle income", "High income"))
+
+# Frequency table
+income_table <- df_vars %>%
+  filter(!is.na(income_status)) %>%
+  count(income_status) %>%
+  mutate(relative_freq = n / sum(n))
+
+print(income_table)
+```
+Interpretation: The frequency table shows the distribution of countries across wealth tiers. The frequency distribution reveals that the majority of countries fall within the Middle/High income brackets, with the High income group being the most frequent. The relatively low percentage of 'Low income' countries (approx. 12%) suggests that while significant wealth exists globally, national-level extreme poverty is concentrated in a specific minority of entities. There are also a lot of territories in this dataset that are high-income but are not independent countries, which skews the results a bit and some data is missing (from Macedonia, for example).
+
+Analyze the distribution of income status across continents by computing absolute and relative frequencies. Comment on the findings.
+
+```{r}
+# Absolute and relative frequencies by continent
+continent_dist <- df_vars %>%
+  filter(!is.na(continent), !is.na(income_status)) %>%
+  group_by(continent, income_status) %>%
+  summarise(count = n(), .groups = "drop_last") %>%
+  mutate(relative_freq = count / sum(count))
+
+print(continent_dist)
+
+# Identify unique countries (only ones in their income group in that continent)
+unique_in_group <- df_vars %>%
+  filter(!is.na(continent)) %>%
+  group_by(continent, income_status) %>%
+  filter(n() == 1) %>%
+  select(Country, continent, income_status)
+
+print(unique_in_group)
+```
+
+
+Using the distribution of income status across continents, identify which countries are the only ones in their income group across the continent. Discuss briefly.
+
+Discussion: The only country completely alone in the income category in a continent are the Seychelles in Africa, which is the only High income country on that continent. This group of islands has a strong economy that largely depends on tourism an fishing.
+
+
+##f. Further Summary Statistics and Insights
+Create a table of average (mean and median) values for expenditure, youth unemployment rate and net migration rate separated into income status. Make sure that in the output, the ordering of the income classes is proper (i.e., L, LM, UM, H or the other way around). Briefly comment the results and any differences between the mean and median.
+
+```{r}
+# Convert columns to numeric to avoid "compatible vectors" error
+df_vars <- df_vars %>%
+  mutate(
+    Education_Expenditure = as.numeric(Education_Expenditure),
+    Youth_Unemployment_Rate = as.numeric(Youth_Unemployment_Rate),
+    Net_Migration = as.numeric(Net_Migration)
+  )
+
+# Calculate Mean and Median
+summary_table <- df_vars %>%
+  filter(!is.na(income_status)) %>%
+  group_by(income_status) %>%
+  summarise(
+    mean_edu   = mean(Education_Expenditure, na.rm = TRUE),
+    med_edu    = median(Education_Expenditure, na.rm = TRUE),
+    mean_unemp = mean(Youth_Unemployment_Rate, na.rm = TRUE),
+    med_unemp  = median(Youth_Unemployment_Rate, na.rm = TRUE),
+    mean_mig   = mean(Net_Migration, na.rm = TRUE),
+    med_mig    = median(Net_Migration, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+summary_table
+```
+Commentary on Results:
+By comparing the mean and median, we can detect skewness in the data. For instance, in the Net Migration variable, the mean is often heavily influenced by a few outlier countries with extreme migration flows, whereas the median provides a better "typical" value for that income group. The mean of the unemployment rate is also very influenced by huge outliers. For the  education expendures the median and mean values are very similiar.
+
+Look at the standard deviation and the interquartile range of the variables per income status instead of
+the location statistics above. Do you gain additional insights? Briefly comment the results.
+
+Code-Snippet
+```{r }
+# 1. Education Expenditure Dispersion Table
+edu_dispersion <- df_vars %>%
+  filter(!is.na(income_status)) %>%
+  group_by(income_status) %>%
+  summarise(
+    sd_education = sd(Education_Expenditure, na.rm = TRUE),
+    iqr_education = IQR(Education_Expenditure, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 2. Youth Unemployment Dispersion Table
+youth_dispersion <- df_vars %>%
+  filter(!is.na(income_status)) %>%
+  group_by(income_status) %>%
+  summarise(
+    sd_unemployment = sd(Youth_Unemployment_Rate, na.rm = TRUE),
+    iqr_unemployment = IQR(Youth_Unemployment_Rate, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 3. Net Migration Dispersion Table
+migration_dispersion <- df_vars %>%
+  filter(!is.na(income_status)) %>%
+  group_by(income_status) %>%
+  summarise(
+    sd_migration = sd(Net_Migration, na.rm = TRUE),
+    iqr_migration = IQR(Net_Migration, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Display the tables one after another
+print(edu_dispersion)
+print(youth_dispersion)
+print(migration_dispersion)
+```
+Education Expenditures: 
+The standard deviation and the IQR are relatively close, which means the data is more normally distributed.
+
+Youth Unemployment rate: 
+The IQR is a bit larger than the SD, which means that there are a few outliers that influence the sd greatly but not so much the IQR.
+
+Migration: The sd is often larger than the iqr, especially for lower middle income, which has a sd that is six times its IQR. that means this group has some quite extreme outliers, which the IQR ignores but the sd doesn't.
 
 
 
+Extend the analysis of the statistics median and IQR to each income status and continent combination. Play around with displaying the resulting table. Use pivot_longer() and/or pivot_wider()
+to generate different outputs. Discuss the results as well as the readability of the different tables.
 
 
+```{r}
+# Long format
+stats_long <- df_vars %>%
+  filter(!is.na(continent), !is.na(income_status)) %>%
+  group_by(continent, income_status) %>%
+  summarise(across(c(Education_Expenditure, Youth_Unemployment_Rate, Net_Migration), 
+                   list(med = ~median(.x, na.rm = TRUE), iqr = ~IQR(.x, na.rm = TRUE))),
+            .groups = "drop") %>%
+  pivot_longer(cols = -c(continent, income_status), 
+               names_to = "metric", 
+               values_to = "value")
+stats_long
+# Wide format for readability
+stats_wide <- stats_long %>%
+  pivot_wider(names_from = income_status, values_from = value)
 
+stats_wide
+```
+The table created by pivot_wider is much more readable than the one with pivot_longer, because with the wider command the income classes are displayed beside each other, which makes comparison much easier.
+
+Identify countries performing well in terms of both youth unemployment and net migration rate (top 25% in net migration and bottom 25% in youth unemployment within their continent).
+```{r}
+# Top 25% in net migration and bottom 25% in youth unemployment within continent
+top_performers <- df_vars %>%
+  filter(!is.na(continent)) %>%
+  group_by(continent) %>%
+  filter(
+    Net_Migration >= quantile(Net_Migration, 0.75, na.rm = TRUE),
+    Youth_Unemployment_Rate <= quantile(Youth_Unemployment_Rate, 0.25, na.rm = TRUE)
+  ) %>%
+  select(Country, continent, Net_Migration, Youth_Unemployment_Rate)
+
+top_performers
+```
+This data shows us that there is quite a difference between all the continents. The migration in Africa  and Oceania very small compared to the European an Asian top countries. Quatar perform especially well because it has a very low youth unemployment rate with a quite high Migration.
