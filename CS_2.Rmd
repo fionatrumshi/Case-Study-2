@@ -3,13 +3,19 @@ title: "Case Study 2"
 author: "Alexandra Faber, Lena Hauer, Fiona Trumshi"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: 
+  pdf_document:
+    highlight: kate
     latex_engine: xelatex
   html_document:
     df_print: paged
 subtitle: AKSTA Statistical Computing
 header-includes: \usepackage{booktabs}
 ---
+```{r include=FALSE}
+knitr::opts_chunk$set(comment = NA, warning = FALSE, attr.source='.numberLines')
+knitr::opts_chunk$set(fig.width=12, fig.height=10, out.width='85%', fig.align='center', warning=FALSE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
 ## AI Usage
 
 \begin{table}[ht]
@@ -45,13 +51,13 @@ country names which contain a space); you have to skip the first two lines.
 • rawdata_347.txt which contains (estimated) net migration rate per country.
 
 
-```{r cars}
-
+```{r}
+library(ggplot2)
+library(broom)
+library(patchwork)
 library(dplyr)
 library(tidyr)
 library(magrittr)
-
-getwd()
 
 youthUnemployment <- read.csv('rawdata_373.csv', sep = ',', colClasses = c("character", "numeric"), col.names = c('Country', 'Youth_Unemployment_Rate'))
 youthUnemployment <- youthUnemployment %>% separate(Country, into = c("Country", "Whitespace"), sep = '\\s{2,}')
@@ -102,7 +108,7 @@ Since ISO Codes are standardized, download and use the CIA country data codes fo
 ```{r}
 income_classification <- read.csv('Income Classification.csv', header = FALSE, sep = ";", skip = 1, col.names = c("Country", "Code", "Region", "Category", "Lending Category"))
 income_classification <- select(income_classification, Category, Code)
-income_classification
+#income_classification
 #merge_all <- income_classification %>% full_join(merged_dataset, by = "Country")
 #merge_all
 ```
@@ -113,10 +119,10 @@ With CIA Country Codes:
 cia_country_codes <- read.csv('Country Data Codes.csv', col.names = c("Country", "Code", "ISO.3166", "Stanag", "Internet", "Comment"))
 cia_country_codes <- select(cia_country_codes, "Country", "Code")
 merge_country_coudes <- merged_dataset %>% left_join(cia_country_codes, by = "Country")
-merge_country_coudes
+#merge_country_coudes
 
 merge_all <-merge_country_coudes %>% left_join(income_classification, by = "Code")
-merge_all
+#merge_all
 ```
 
 
@@ -143,11 +149,11 @@ df_vars <- merge_all %>%
 
 # Verify dimensions to ensure the number of countries stayed the same
 dim(df_vars)
-df_vars
+#df_vars
 ```
 The dimensions are the same as before,  so no country is lost.
 
-##e. Data Tidiness and Summary Statistics
+## e. Data Tidiness and Summary Statistics
 
 Evaluate the tidiness of df_vars (observational units, variables, fixed vs. measured variables). Make adjustments to tidy the data, if necessary.
 
@@ -205,7 +211,7 @@ Using the distribution of income status across continents, identify which countr
 Discussion: The only country completely alone in the income category in a continent are the Seychelles in Africa, which is the only High income country on that continent. This group of islands has a strong economy that largely depends on tourism an fishing.
 
 
-##f. Further Summary Statistics and Insights
+## f. Further Summary Statistics and Insights
 Create a table of average (mean and median) values for expenditure, youth unemployment rate and net migration rate separated into income status. Make sure that in the output, the ordering of the income classes is proper (i.e., L, LM, UM, H or the other way around). Briefly comment the results and any differences between the mean and median.
 
 ```{r}
@@ -325,3 +331,127 @@ top_performers <- df_vars %>%
 top_performers
 ```
 This data shows us that there is quite a difference between all the continents. The migration in Africa  and Oceania very small compared to the European an Asian top countries. Quatar perform especially well because it has a very low youth unemployment rate with a quite high Migration.
+
+
+## g. Conditional probabilities
+
+Estimate the following based on the observed frequencies in the data:
+• What is the (posterior or conditional) probability that a European country belongs to the high income
+group? What is the prior probability that a country belongs to the high income group?
+
+
+```{r}
+g_1 <- df_vars %>% filter(continent == "Europe" & !is.na(income_status)) %>% count(income_status) %>% mutate(perc_income_EU = round(n/sum(n) * 100, 2) ) %>% filter(income_status == "High income") %>% select(perc_income_EU) %>% as.numeric()
+
+paste0("Posterior or conditional probability that a European country belongs to the high income group ", g_1, "%")
+```
+
+```{r}
+g_2 <- df_vars %>% filter(!is.na(income_status)) %>% count(income_status) %>% mutate(perc_income = round(n/sum(n)*100, 2)) %>% filter(income_status == "High income") %>% select(perc_income) %>% as.numeric()
+
+paste0("Prior probability that a country belongs to the high income group ", g_2, "%")
+```
+
+• Given a country has high youth unemployment (above %25), what is the probability that it also has
+negative net migration?
+
+```{r}
+g_3 <- df_vars %>% filter(Youth_Unemployment_Rate > 25 & !is.na(Youth_Unemployment_Rate) & !is.na(Net_Migration)) %>% mutate(net_migration_sign = ifelse(Net_Migration < 0, "-", "+")) %>% relocate(net_migration_sign, .after = Net_Migration) %>% count(net_migration_sign) %>% mutate(perc_net_migr_sign = round(n/sum(n)*100, 2)) %>% filter(net_migration_sign == "-") %>% select(perc_net_migr_sign) %>% as.numeric()
+paste0("Given a country has high youth unemployment (above %25), the probability that it also has
+negative net migration is ", g_3, "%")
+```
+
+
+## h. Simpson’s Paradox Analysis
+Investigate whether an overall trend in youth unemployment rate in the high and low income groups reverses
+when analyzed at the continent level. E.g., does the youth unemployment rate appear lower in low-income
+countries overall, but higher when controlling for continent? Explain the results and possible reasons behind
+this paradox.
+
+```{r}
+model_overall <- lm(Youth_Unemployment_Rate~income_status, data = df_vars)
+model_continent <- lm(Youth_Unemployment_Rate~income_status+continent, data = df_vars)
+summary(model_overall)
+summary(model_continent)
+```
+
+Two linear models are fitted to compare the effect of high income on youth unemployment rate when continents are omitted and when they are included as control variables. The summary of the overall model shows that, compared to low income, all other income categories have a higher (positive) effect on youth unemployment rate. However, only upper middle income is significant. On the other hand, the coefficients for income status are much higher for all categories when continents are included in the model, with Africa as the reference continent. Here, high income has a significant p-value with a coefficient nearly 5 times higher than in the overall model.
+
+```{r}
+
+coef_overall    <- coef(model_overall)["income_statusHigh income"]
+coef_controlled <- coef(model_continent)["income_statusHigh income"]
+
+cat("Overall effect of High income:              ", round(coef_overall, 3), "\n")
+cat("Effect controlling for continent:           ", round(coef_controlled, 3), "\n")
+```
+
+```{r}
+tidy_overall    <- tidy(model_overall,    conf.int = TRUE) %>% mutate(model = "Overall (no continent)")
+tidy_controlled <- tidy(model_continent, conf.int = TRUE) %>% mutate(model = "Controlled for continent")
+
+bind_rows(tidy_overall, tidy_controlled) %>%
+  filter(term == "income_statusHigh income") %>%
+  ggplot(aes(x = model, y = estimate, color = model)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  labs(
+    title    = "Effect of High Income on Youth Unemployment",
+    x = NULL, y = "Coefficient (vs. Low income)",
+    caption  = "Error bars = 95% confidence interval"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+df_plot <- df_vars %>%
+  filter(!is.na(Youth_Unemployment_Rate),
+         !is.na(continent), !is.na(income_status))
+
+# Overall means
+overall_means <- df_plot %>% filter(!is.na(Youth_Unemployment_Rate),
+         !is.na(continent) & !is.na(income_status)) %>% 
+  group_by(income_status) %>%
+  summarise(mean_unemp = mean(Youth_Unemployment_Rate, na.rm = TRUE))
+
+# Within-continent means
+continent_means <- df_plot %>%
+  group_by(continent, income_status) %>%
+  summarise(mean_unemp = mean(Youth_Unemployment_Rate, na.rm = TRUE), .groups = "drop")
+
+p1 <- ggplot(overall_means, aes(x = income_status, y = mean_unemp, fill = income_status)) +
+  geom_col(width = 0.5) +
+  geom_text(aes(label = round(mean_unemp, 1)), vjust = -0.5) +
+  labs(title = "A: Overall (marginal)", y = "Mean Youth Unemployment (%)", x = NULL) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_blank())
+
+p2 <- ggplot(continent_means, aes(x = income_status, y = mean_unemp, fill = income_status)) +
+  geom_col(position = "dodge", width = 0.6) +
+  geom_text(aes(label = round(mean_unemp, 1)), 
+            position = position_dodge(0.6), vjust = -0.5, size = 3) +
+  facet_wrap(~ continent, nrow = 1) +
+  labs(title = "B: Within each continent (controlled)", y = NULL, x = NULL) +
+  theme_minimal() +
+  theme(legend.position = "bottom", 
+        axis.text.x = element_blank())
+
+p1 + p2 + plot_layout(widths = c(1, 3)) +
+  plot_annotation(
+    title    = "Simpson's Paradox: Youth Unemployment by Income Group"
+  )
+```
+
+The plot shows the mean youth unemployment rate overall (across all continents) and then separately for each continent. Americas, Europe, and Oceania have no countries classified as low income, therefore the mean was only computed for high income and middle income categories. While the overall trend shows that mean youth unemployment rate is higher in the upper middle income group, the trend is reversed when controlling for continent. The Americas show a higher unemployment rate for high income countries, while Asia has a large proportion of low income countries with high unemployment rates. This is due to the fact that each continent has a different distribution of income groups among its countries due to economic factors. Hence, observing a global effect alone is limiting, whereas analysing the same phenomenon across different groups can reveal reversed trends.
+
+
+## i. Data Export
+Export the final tidy dataset from e. as a CSV with:; as a separator;. representing missing values; no row
+names included. Upload the .csv to TUWEL, together with the submission.
+```{r}
+write.csv2(df_vars, "df.csv", na = ".", row.names = FALSE)
+```
+
