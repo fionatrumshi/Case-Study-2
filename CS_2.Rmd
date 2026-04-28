@@ -20,19 +20,21 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{l|rrrrrrrrr}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l|ccccccccc}
 \toprule
- \textbf{AI usage} & \textbf {Question a} & \textbf{Question b} & \textbf{Question c} &\textbf{Question d} &\textbf{Question e} & \textbf{Question f}\textbf{Question g}\textbf{Question i}\textbf{Question j}  \\
+\textbf{AI usage} & \textbf{Question a} & \textbf{Question b} & \textbf{Question c} & \textbf{Question d} & \textbf{Question e} & \textbf{Question f} & \textbf{Question g} & \textbf{Question i} & \textbf{Question j} \\
 \midrule
-\textit{Feedback on existing solution}  & no & no & no & no &  no  &  no&  &  &   \\ 
-\textit{Improving existing code}   & little & no & no & little & little  & little &  &  &   \\
-\textit{Generating new code}  & no & no & no & no &  no  & no  &  &  &   \\ 
-\textit{Layout and formatting}  & no & no & no & no &  no   &   &  &  &    \\ 
-\textit{Text correction}   & no & no & no & no & no & no &  &  &        \\ 
-\textit{Debugging} & no & no & no & no & no & no &  &  &   \\
-\textit{AI Model} & GPT-5.3  &  &  &  Gemini 3.1  & Gemini 3.1 & Gemini 3.1 &  &  &   \\ 
+\textit{Feedback on existing solution} & no & no & no & no & no & no & no & no & no \\
+\textit{Improving existing code}       & little & no & no & little & little & little & no & little & no \\
+\textit{Generating new code}           & no & no & no & no & no & no & no & no & no \\
+\textit{Layout and formatting}         & no & no & no & no & no & no & no & no & no \\
+\textit{Text correction}               & no & no & no & no & no & no & no & little & no \\
+\textit{Debugging}                     & no & no & no & no & no & no & no & no & no \\
+\textit{AI Model}                      & GPT-5.3 & & & Gemini 3.1 & Gemini 3.1 & Gemini 3.1 & no & Sonnet 4.6 & no \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 ```{r setup, include=FALSE}
@@ -59,19 +61,26 @@ library(dplyr)
 library(tidyr)
 library(magrittr)
 
-youthUnemployment <- read.csv('rawdata_373.csv', sep = ',', colClasses = c("character", "numeric"), col.names = c('Country', 'Youth_Unemployment_Rate'))
-youthUnemployment <- youthUnemployment %>% separate(Country, into = c("Country", "Whitespace"), sep = '\\s{2,}')
+youthUnemployment <- read.csv('rawdata_373.csv', sep = ',', colClasses 
+                              = c("character", "numeric"), 
+                         col.names = c('Country', 'Youth_Unemployment_Rate'))
+youthUnemployment <- youthUnemployment %>% separate(Country, into
+                                = c("Country", "Whitespace"), sep = '\\s{2,}')
 youthUnemployment <- select(youthUnemployment, Country, Youth_Unemployment_Rate)
 
 
-edu_expend <- read.delim('rawdata_369.txt', skip = 1, header = FALSE, sep = '^')
-edu_expend <- edu_expend %>% separate(V1, into = c("Index", "Country", "Education_Expenditure", "Year" ), sep = '\\s{2,}')
+edu_expend <- read.delim('rawdata_369.txt', skip = 1, header = FALSE, 
+                         sep = '^')
+edu_expend <- edu_expend %>% separate(V1, into = c("Index", "Country", 
+                      "Education_Expenditure", "Year" ), sep = '\\s{2,}')
 edu_expend <- select(edu_expend, Country, Education_Expenditure)
 
 
-net_migration <- read.delim('rawdata_347.txt', skip = 1, header = FALSE, sep = '^')
+net_migration <- read.delim('rawdata_347.txt', skip = 1, header = FALSE, 
+                            sep = '^')
 
-net_migration <- net_migration %>% separate(V1, into = c("Index", "Country", "Net_Migration", "Year" ), sep = '\\s{2,}')
+net_migration <- net_migration %>% separate(V1, into = c("Index", 
+                "Country", "Net_Migration", "Year" ), sep = '\\s{2,}')
 net_migration <- select(net_migration, Country, Net_Migration)
 
 
@@ -92,7 +101,8 @@ A:
 ```{r}
 
 
-merged_dataset <- youthUnemployment %>% full_join(edu_expend, by = "Country") %>% full_join(net_migration, by = "Country")
+merged_dataset <- youthUnemployment %>% full_join(edu_expend, by = 
+                 "Country") %>% full_join(net_migration, by = "Country")
 dim(merged_dataset)
 
 
@@ -106,7 +116,10 @@ Identify common variables between the datasets. Can they be used for merging? Wh
 Since ISO Codes are standardized, download and use the CIA country data codes for merging. Make sure you are not losing any of the countries in your original dataset when merging. 
 
 ```{r}
-income_classification <- read.csv('Income Classification.csv', header = FALSE, sep = ";", skip = 1, col.names = c("Country", "Code", "Region", "Category", "Lending Category"))
+income_classification <- read.csv('Income Classification.csv', 
+                         header = FALSE, sep = ";", skip = 1, 
+                         col.names = c("Country", "Code", "Region", "Category", 
+                                       "Lending Category"))
 income_classification <- select(income_classification, Category, Code)
 #income_classification
 #merge_all <- income_classification %>% full_join(merged_dataset, by = "Country")
@@ -116,12 +129,16 @@ income_classification <- select(income_classification, Category, Code)
 With CIA Country Codes:
 
 ```{r}
-cia_country_codes <- read.csv('Country Data Codes.csv', col.names = c("Country", "Code", "ISO.3166", "Stanag", "Internet", "Comment"))
+cia_country_codes <- read.csv('Country Data Codes.csv', 
+                     col.names = c("Country", "Code", "ISO.3166", 
+                                  "Stanag", "Internet", "Comment"))
 cia_country_codes <- select(cia_country_codes, "Country", "Code")
-merge_country_coudes <- merged_dataset %>% left_join(cia_country_codes, by = "Country")
+merge_country_coudes <- merged_dataset %>% left_join(cia_country_codes, 
+                                                     by = "Country")
 #merge_country_coudes
 
-merge_all <-merge_country_coudes %>% left_join(income_classification, by = "Code")
+merge_all <-merge_country_coudes %>% left_join(income_classification, 
+                                               by = "Code")
 #merge_all
 ```
 
@@ -138,7 +155,8 @@ library(readr)
 
 # Loading the geograhical resource (Downloaded from: https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv)
 # reading only the relevant information
-geo_data <- read_csv("countries-with-regional-codes.csv", show_col_types = FALSE) %>%
+geo_data <- read_csv("countries-with-regional-codes.csv", 
+                     show_col_types = FALSE) %>%
   select(`alpha-3`, region, `sub-region`) %>%
   rename(code = `alpha-3`, continent = region, subcontinent = `sub-region`)
 
@@ -170,8 +188,8 @@ Create a frequency table for the income status variable and briefly interpret th
 ```{r }
 # Ensure income_status is a factor with proper levels for ordering
 df_vars$income_status <- factor(df_vars$Category, 
-                                levels = c("Low income", "Lower middle income", 
-                                           "Upper middle income", "High income"))
+                        levels = c("Low income", "Lower middle income", 
+                                   "Upper middle income", "High income"))
 
 # Frequency table
 income_table <- df_vars %>%
@@ -301,8 +319,10 @@ to generate different outputs. Discuss the results as well as the readability of
 stats_long <- df_vars %>%
   filter(!is.na(continent), !is.na(income_status)) %>%
   group_by(continent, income_status) %>%
-  summarise(across(c(Education_Expenditure, Youth_Unemployment_Rate, Net_Migration), 
-                   list(med = ~median(.x, na.rm = TRUE), iqr = ~IQR(.x, na.rm = TRUE))),
+  summarise(across(c(Education_Expenditure, 
+                     Youth_Unemployment_Rate, Net_Migration), 
+                   list(med = ~median(.x, na.rm = TRUE), 
+                        iqr = ~IQR(.x, na.rm = TRUE))),
             .groups = "drop") %>%
   pivot_longer(cols = -c(continent, income_status), 
                names_to = "metric", 
@@ -324,7 +344,8 @@ top_performers <- df_vars %>%
   group_by(continent) %>%
   filter(
     Net_Migration >= quantile(Net_Migration, 0.75, na.rm = TRUE),
-    Youth_Unemployment_Rate <= quantile(Youth_Unemployment_Rate, 0.25, na.rm = TRUE)
+    Youth_Unemployment_Rate <= quantile(Youth_Unemployment_Rate, 0.25, 
+                                        na.rm = TRUE)
   ) %>%
   select(Country, continent, Net_Migration, Youth_Unemployment_Rate)
 
@@ -341,24 +362,39 @@ group? What is the prior probability that a country belongs to the high income g
 
 
 ```{r}
-g_1 <- df_vars %>% filter(continent == "Europe" & !is.na(income_status)) %>% count(income_status) %>% mutate(perc_income_EU = round(n/sum(n) * 100, 2) ) %>% filter(income_status == "High income") %>% select(perc_income_EU) %>% as.numeric()
+g_1 <- df_vars %>% filter(continent == "Europe" & !is.na(income_status)) %>% 
+  count(income_status) %>% 
+  mutate(perc_income_EU = round(n/sum(n) * 100, 2) ) %>% 
+  filter(income_status == "High income") %>% 
+  select(perc_income_EU) %>% as.numeric()
 
-paste0("Posterior or conditional probability that a European country belongs to the high income group ", g_1, "%")
+cat("Posterior or conditional probability that a European country belongs\n",
+    "to the high income group ", g_1, "%", sep = "")
 ```
 
 ```{r}
-g_2 <- df_vars %>% filter(!is.na(income_status)) %>% count(income_status) %>% mutate(perc_income = round(n/sum(n)*100, 2)) %>% filter(income_status == "High income") %>% select(perc_income) %>% as.numeric()
+g_2 <- df_vars %>% filter(!is.na(income_status)) %>% 
+  count(income_status) %>% mutate(perc_income = round(n/sum(n)*100, 2)) %>% 
+filter(income_status == "High income") %>% select(perc_income) %>% as.numeric()
 
-paste0("Prior probability that a country belongs to the high income group ", g_2, "%")
+cat(paste("Prior probability that a country belongs to the high income group ", g_2, "%"), sep = "")
 ```
 
 • Given a country has high youth unemployment (above %25), what is the probability that it also has
 negative net migration?
 
 ```{r}
-g_3 <- df_vars %>% filter(Youth_Unemployment_Rate > 25 & !is.na(Youth_Unemployment_Rate) & !is.na(Net_Migration)) %>% mutate(net_migration_sign = ifelse(Net_Migration < 0, "-", "+")) %>% relocate(net_migration_sign, .after = Net_Migration) %>% count(net_migration_sign) %>% mutate(perc_net_migr_sign = round(n/sum(n)*100, 2)) %>% filter(net_migration_sign == "-") %>% select(perc_net_migr_sign) %>% as.numeric()
-paste0("Given a country has high youth unemployment (above %25), the probability that it also has
-negative net migration is ", g_3, "%")
+g_3 <- df_vars %>% filter(Youth_Unemployment_Rate > 25 & 
+                  !is.na(Youth_Unemployment_Rate) & !is.na(Net_Migration)) %>% 
+  mutate(net_migration_sign = ifelse(Net_Migration < 0, "-", "+")) %>% 
+  relocate(net_migration_sign, .after = Net_Migration) %>% 
+  count(net_migration_sign) %>% 
+  mutate(perc_net_migr_sign = round(n/sum(n)*100, 2)) %>% 
+  filter(net_migration_sign == "-") %>% select(perc_net_migr_sign) %>% 
+  as.numeric()
+cat(paste("Given a country has high youth unemployment (above 25%),"),
+    paste("the probability that it also has negative net migration is", g_3, "%"),
+    sep = "\n")
 ```
 
 
@@ -370,7 +406,8 @@ this paradox.
 
 ```{r}
 model_overall <- lm(Youth_Unemployment_Rate~income_status, data = df_vars)
-model_continent <- lm(Youth_Unemployment_Rate~income_status+continent, data = df_vars)
+model_continent <- lm(Youth_Unemployment_Rate~income_status+continent, 
+                      data = df_vars)
 summary(model_overall)
 summary(model_continent)
 ```
@@ -382,19 +419,22 @@ Two linear models are fitted to compare the effect of high income on youth unemp
 coef_overall    <- coef(model_overall)["income_statusHigh income"]
 coef_controlled <- coef(model_continent)["income_statusHigh income"]
 
-cat("Overall effect of High income:              ", round(coef_overall, 3), "\n")
-cat("Effect controlling for continent:           ", round(coef_controlled, 3), "\n")
+cat("Overall effect of High income: ", round(coef_overall, 3), "\n")
+cat("Effect controlling for continent: ", round(coef_controlled, 3), "\n")
 ```
 
 ```{r}
-tidy_overall    <- tidy(model_overall,    conf.int = TRUE) %>% mutate(model = "Overall (no continent)")
-tidy_controlled <- tidy(model_continent, conf.int = TRUE) %>% mutate(model = "Controlled for continent")
+tidy_overall    <- tidy(model_overall,    conf.int = TRUE) %>% 
+  mutate(model = "Overall (no continent)")
+tidy_controlled <- tidy(model_continent, conf.int = TRUE) %>% 
+  mutate(model = "Controlled for continent")
 
 bind_rows(tidy_overall, tidy_controlled) %>%
   filter(term == "income_statusHigh income") %>%
   ggplot(aes(x = model, y = estimate, color = model)) +
   geom_point(size = 4) +
-  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, linewidth = 1) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.2, linewidth = 1) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
   labs(
     title    = "Effect of High Income on Youth Unemployment",
@@ -419,17 +459,21 @@ overall_means <- df_plot %>% filter(!is.na(Youth_Unemployment_Rate),
 # Within-continent means
 continent_means <- df_plot %>%
   group_by(continent, income_status) %>%
-  summarise(mean_unemp = mean(Youth_Unemployment_Rate, na.rm = TRUE), .groups = "drop")
+  summarise(mean_unemp = mean(Youth_Unemployment_Rate, na.rm = TRUE), 
+            .groups = "drop")
 
-p1 <- ggplot(overall_means, aes(x = income_status, y = mean_unemp, fill = income_status)) +
+p1 <- ggplot(overall_means, aes(x = income_status, y = mean_unemp, 
+                                fill = income_status)) +
   geom_col(width = 0.5) +
   geom_text(aes(label = round(mean_unemp, 1)), vjust = -0.5) +
-  labs(title = "A: Overall (marginal)", y = "Mean Youth Unemployment (%)", x = NULL) +
+  labs(title = "A: Overall (marginal)", y = "Mean Youth Unemployment (%)", 
+       x = NULL) +
   theme_minimal() +
   theme(legend.position = "none",
         axis.text.x = element_blank())
 
-p2 <- ggplot(continent_means, aes(x = income_status, y = mean_unemp, fill = income_status)) +
+p2 <- ggplot(continent_means, aes(x = income_status, y = mean_unemp, 
+                                  fill = income_status)) +
   geom_col(position = "dodge", width = 0.6) +
   geom_text(aes(label = round(mean_unemp, 1)), 
             position = position_dodge(0.6), vjust = -0.5, size = 3) +
