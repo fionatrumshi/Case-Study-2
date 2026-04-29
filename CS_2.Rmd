@@ -96,8 +96,8 @@ Return the dimensions of the merged dataset.
 
 Answer:
 
-- The key country is being used, since that is the one variable that every data set contains and the variable the others are depending on. The join used to merge is the full join because it keeps all observations from all three tables.
-- The dimension of the dataset is 227 4 which is 227 rows(oberservation) with 4 columns (variables). The amount of observation is equal to the amount of observations in the largest dataset (Net Migration Rate). Therefore we can conclude, that the merge was successful. 
+- The key "Country" is being used, since that is the one variable that every data set contains and the variable the others are depending on. The join used to merge is the full join because it keeps all observations from all three tables.
+- The dimension of the dataset is 227 4 which is 227 rows(oberservation) with 4 columns (variables). The amount of observations is equal to the amount of observations in the largest dataset (Net Migration Rate). Therefore we can conclude that the merge was successful. 
 ```{r}
 
 
@@ -125,7 +125,7 @@ income_classification <- select(income_classification, Category, Code)
 #merge_all <- income_classification %>% full_join(merged_dataset, by = "Country")
 #merge_all
 ```
-
+The income classification dataset cannot be successfully merged with our dataset since the country names are not equal, which leads to a larger dataset than wanted (some countries can be merged, others will appear twice in the new dataset). This problem can be tackled via using a dataset like the cia country codes and merging it with the others. 
 With CIA Country Codes:
 
 ```{r}
@@ -135,11 +135,9 @@ cia_country_codes <- read.csv('Country Data Codes.csv',
 cia_country_codes <- select(cia_country_codes, "Country", "Code")
 merge_country_coudes <- merged_dataset %>% left_join(cia_country_codes, 
                                                      by = "Country")
-#merge_country_coudes
 
 merge_all <-merge_country_coudes %>% left_join(income_classification, 
                                                by = "Code")
-#merge_all
 ```
 
 
