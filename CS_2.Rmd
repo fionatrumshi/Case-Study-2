@@ -45,11 +45,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Load the following datasets from TUWEL and ensure that missing values are handled correctly and column
 names are clear. Each dataset should ultimately contain only two columns: country and the respective
-variable. Note that some data sets also contain information on the year when the value was last updated.
+variable. Note that some data sets also contain information on the year when the value was last updated.\\
 • rawdata_369.txt which contains the (estimated) public expenditure on education as a percent of GDP.
 Pay attention! The delimiter is 2 or more white spaces (one space would linot work as it would separate
-country names which contain a space); you have to skip the first two lines.
-• rawdata_373.csv which contains the (estimated) youth unemployment rate (15-24) per country
+country names which contain a space); you have to skip the first two lines.\\
+• rawdata_373.csv which contains the (estimated) youth unemployment rate (15-24) per country\\
 • rawdata_347.txt which contains (estimated) net migration rate per country.
 
 
@@ -94,7 +94,7 @@ Merge the datasets using dplyr on a unique key and retain the union of all obser
 What key are you using for merging?
 Return the dimensions of the merged dataset.
 
-A:
+Answer:
 
 - The key country is being used, since that is the one variable that every data set contains and the variable the others are depending on. The join used to merge is the full join because it keeps all observations from all three tables.
 - The dimension of the dataset is 227 4 which is 227 rows(oberservation) with 4 columns (variables). The amount of observation is equal to the amount of observations in the largest dataset (Net Migration Rate). Therefore we can conclude, that the merge was successful. 
@@ -153,15 +153,15 @@ Merge this information into the dataset, naming the final dataset df_vars. Make 
 library(dplyr)
 library(readr)
 
-# Loading the geograhical resource (Downloaded from: https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv)
+# Loading the geograhical resource (Downloaded from:
+#https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv)
 # reading only the relevant information
 geo_data <- read_csv("countries-with-regional-codes.csv", 
                      show_col_types = FALSE) %>%
   select(`alpha-3`, region, `sub-region`) %>%
   rename(code = `alpha-3`, continent = region, subcontinent = `sub-region`)
 
-# Merge into the existing dataset
-# We use left_join to ensure no countries from the original set are lost
+# Using left_join to ensure no countries from the original set are lost
 df_vars <- merge_all %>%
   left_join(geo_data, by = c("Code" = "code"))
 
@@ -226,7 +226,7 @@ print(unique_in_group)
 
 Using the distribution of income status across continents, identify which countries are the only ones in their income group across the continent. Discuss briefly.
 
-Discussion: The only country completely alone in the income category in a continent are the Seychelles in Africa, which is the only High income country on that continent. This group of islands has a strong economy that largely depends on tourism an fishing.
+Discussion: The only country completely alone in the income category in a continent are the Seychelles in Africa, which is the only High income country on that continent. This group of islands has a strong economy that largely depends on tourism and fishing.
 
 
 ## f. Further Summary Statistics and Insights
@@ -263,7 +263,6 @@ By comparing the mean and median, we can detect skewness in the data. For instan
 Look at the standard deviation and the interquartile range of the variables per income status instead of
 the location statistics above. Do you gain additional insights? Briefly comment the results.
 
-Code-Snippet
 ```{r }
 # 1. Education Expenditure Dispersion Table
 edu_dispersion <- df_vars %>%
@@ -351,12 +350,12 @@ top_performers <- df_vars %>%
 
 top_performers
 ```
-This data shows us that there is quite a difference between all the continents. The migration in Africa  and Oceania very small compared to the European an Asian top countries. Quatar perform especially well because it has a very low youth unemployment rate with a quite high Migration.
+This data shows us that there is quite a difference between all the continents. The migration in Africa  and Oceania very small compared to the European an Asian top countries. Quatar performs especially well because it has a very low youth unemployment rate with a quite high Migration.
 
 
 ## g. Conditional probabilities
 
-Estimate the following based on the observed frequencies in the data:
+Estimate the following based on the observed frequencies in the data:\\
 • What is the (posterior or conditional) probability that a European country belongs to the high income
 group? What is the prior probability that a country belongs to the high income group?
 
