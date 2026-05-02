@@ -31,7 +31,7 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 \textit{Layout and formatting}         & no & no & no & no & no & no & no & no & no \\
 \textit{Text correction}               & no & no & no & no & no & no & no & little & no \\
 \textit{Debugging}                     & no & no & no & no & no & no & no & no & no \\
-\textit{AI Model}                      & GPT-5.3 & & & Gemini 3.1 & Gemini 3.1 & Gemini 3.1 & no & Sonnet 4.6 & no \\
+\textit{AI Model}                      & GPT-5.3 & no & no & Gemini 3.1 & Gemini 3.1 & Gemini 3.1 & no & Sonnet 4.6 & no \\
 \bottomrule
 \end{tabular}%
 }
@@ -97,7 +97,7 @@ Return the dimensions of the merged dataset.
 Answer:
 
 - The key "Country" is being used, since that is the one variable that every data set contains and the variable the others are depending on. The join used to merge is the full join because it keeps all observations from all three tables.
-- The dimension of the dataset is 227 4 which is 227 rows(oberservation) with 4 columns (variables). The amount of observations is equal to the amount of observations in the largest dataset (Net Migration Rate). Therefore we can conclude that the merge was successful. 
+- The dimension of the dataset is 227 4 which is 227 rows (oberservations) with 4 columns (variables). The amount of observations is equal to the amount of observations in the largest dataset (Net Migration Rate). Therefore we can conclude that the merge was successful. 
 ```{r}
 
 
@@ -121,7 +121,7 @@ income_classification <- read.csv('Income Classification.csv',
                          col.names = c("Country", "Code", "Region", "Category", 
                                        "Lending Category"))
 income_classification <- select(income_classification, Category, Code)
-#income_classification
+
 #merge_all <- income_classification %>% full_join(merged_dataset, by = "Country")
 #merge_all
 ```
